@@ -1,5 +1,5 @@
-import * as Joi from 'joi';
-import { FilterSchema } from 'src/@1hand/base.validator';
+import * as Joi from "joi";
+import { FilterSchema } from "../@1hand/base.validator";
 
 export const CreateTemplateSchema = Joi.object({
   name: Joi.string().trim().required(),

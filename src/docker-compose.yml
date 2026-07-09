@@ -9,11 +9,20 @@ services:
       MYSQL_PASSWORD: meta_password
       MYSQL_ROOT_PASSWORD: root_password
     ports:
-      - "3306:3306"
+      - "3366:3366"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-uroot",
+          "-proot_password",
+        ]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -25,7 +34,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: mysql://meta:meta_password@mysql:3306/meta_lab
+      DATABASE_URL: mysql://root:root_password@mysql:3366/meta_lab
     ports:
       - "3000:3000"
     volumes:

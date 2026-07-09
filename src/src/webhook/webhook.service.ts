@@ -1,11 +1,16 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { createHmac, timingSafeEqual } from 'crypto';
-import { ApiLogDirection } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
-import { classifyWebhook } from './webhook-classifier';
-import { WebhookProcessorService } from './webhook-processor.service';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { createHmac, timingSafeEqual } from "crypto";
+import { ApiLogDirection } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
+import { classifyWebhook } from "./webhook-classifier";
+import { WebhookProcessorService } from "./webhook-processor.service";
 
 interface IngestOptions {
   payload: any;
@@ -28,11 +33,11 @@ export class WebhookService {
 
   async ingest(options: IngestOptions) {
     const started = Date.now();
-    this.logger.log('Webhook recu');
+    this.logger.log("Webhook recu");
 
     if (options.verifySignature) {
       this.verifySignature(options.rawBody, options.signature);
-      this.logger.log('Signature valide');
+      this.logger.log("Signature valide");
     }
 
     const classified = classifyWebhook(options.payload);
@@ -49,8 +54,8 @@ export class WebhookService {
     await this.prisma.apiLog.create({
       data: {
         direction: ApiLogDirection.INBOUND,
-        method: 'POST',
-        url: '/webhook',
+        method: "POST",
+        url: "/webhook",
         statusCode: 200,
         requestBody: options.payload,
         responseBody: { eventId: event.id, type: classified.type },
@@ -58,21 +63,39 @@ export class WebhookService {
       },
     });
 
-    void this.processStoredEvent(event.id, options.payload, classified, started);
-    this.events.emit('webhook.received', { eventId: event.id, type: classified.type });
-    this.logger.log('Reponse 200 envoyee a Meta');
+    void this.processStoredEvent(
+      event.id,
+      options.payload,
+      classified,
+      started,
+    );
+    this.events.emit("webhook.received", {
+      eventId: event.id,
+      type: classified.type,
+    });
+    this.logger.log("Reponse 200 envoyee a Meta");
     return event;
   }
 
   async replay(eventId: string) {
-    const event = await this.prisma.webhookEvent.findUniqueOrThrow({ where: { id: eventId } });
+    const event = await this.prisma.webhookEvent.findUniqueOrThrow({
+      where: { id: eventId },
+    });
     const classified = classifyWebhook(event.payload);
     await this.processor.process(event.id, event.payload, classified);
-    this.events.emit('webhook.replayed', { eventId: event.id, type: classified.type });
+    this.events.emit("webhook.replayed", {
+      eventId: event.id,
+      type: classified.type,
+    });
     return { ok: true, eventId: event.id, type: classified.type };
   }
 
-  private async processStoredEvent(eventId: string, payload: any, classified: ReturnType<typeof classifyWebhook>, started: number) {
+  private async processStoredEvent(
+    eventId: string,
+    payload: any,
+    classified: ReturnType<typeof classifyWebhook>,
+    started: number,
+  ) {
     try {
       await this.processor.process(eventId, payload, classified);
       const processingTime = Date.now() - started;
@@ -80,33 +103,46 @@ export class WebhookService {
         where: { id: eventId },
         data: { processed: true, processingTime },
       });
-      this.logger.log('Conversation/message/statut enregistres');
+      this.logger.log("Conversation/message/statut enregistres");
     } catch (error: any) {
       await this.prisma.webhookEvent.update({
         where: { id: eventId },
-        data: { processed: false, processingTime: Date.now() - started, error: error.message },
+        data: {
+          processed: false,
+          processingTime: Date.now() - started,
+          error: error.message,
+        },
       });
       this.logger.error(`Erreur traitement webhook: ${error.message}`);
     }
   }
 
   private verifySignature(rawBody?: Buffer, signature?: string) {
-    const appSecret = this.config.get<string>('meta.appSecret');
+    const appSecret = this.config.get<string>("meta.appSecret");
     if (!appSecret) {
-      this.logger.warn('META_APP_SECRET absent: verification HMAC ignoree en mode laboratoire');
+      this.logger.warn(
+        "META_APP_SECRET absent: verification HMAC ignoree en mode laboratoire",
+      );
       return;
     }
     if (!rawBody) {
-      throw new BadRequestException('rawBody manquant: impossible de verifier la signature');
+      throw new BadRequestException(
+        "rawBody manquant: impossible de verifier la signature",
+      );
     }
-    if (!signature?.startsWith('sha256=')) {
-      throw new UnauthorizedException('Signature x-hub-signature-256 manquante');
+    if (!signature?.startsWith("sha256=")) {
+      throw new UnauthorizedException(
+        "Signature x-hub-signature-256 manquante",
+      );
     }
-    const expected = `sha256=${createHmac('sha256', appSecret).update(rawBody).digest('hex')}`;
+    const expected = `sha256=${createHmac("sha256", appSecret).update(rawBody).digest("hex")}`;
     const expectedBuffer = Buffer.from(expected);
     const actualBuffer = Buffer.from(signature);
-    if (expectedBuffer.length !== actualBuffer.length || !timingSafeEqual(expectedBuffer, actualBuffer)) {
-      throw new UnauthorizedException('Signature Meta invalide');
+    if (
+      expectedBuffer.length !== actualBuffer.length ||
+      !timingSafeEqual(expectedBuffer, actualBuffer)
+    ) {
+      throw new UnauthorizedException("Signature Meta invalide");
     }
   }
 }

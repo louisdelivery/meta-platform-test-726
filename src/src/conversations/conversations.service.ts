@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { ConversationStatus } from '@prisma/client';
-import { parsePagination } from 'src/@1hand/utils';
-import { PrismaService } from 'src/prisma.service';
-import { FilterConversationDto } from './conversations.types';
-import { toConversationDto } from './conversations.mapper';
+import { Injectable } from "@nestjs/common";
+import { ConversationStatus } from "@prisma/client";
+import { parsePagination } from "../@1hand/utils";
+import { PrismaService } from "../prisma.service";
+import { FilterConversationDto } from "./conversations.types";
+import { toConversationDto } from "./conversations.mapper";
 
 @Injectable()
 export class ConversationsService {
@@ -12,12 +12,15 @@ export class ConversationsService {
   async touchConversation(phoneNumber: string, contactId?: string) {
     const existing = await this.prisma.conversation.findFirst({
       where: { phoneNumber, status: ConversationStatus.OPEN },
-      orderBy: { lastActivity: 'desc' },
+      orderBy: { lastActivity: "desc" },
     });
     if (existing) {
       return this.prisma.conversation.update({
         where: { id: existing.id },
-        data: { lastActivity: new Date(), contactId: contactId ?? existing.contactId },
+        data: {
+          lastActivity: new Date(),
+          contactId: contactId ?? existing.contactId,
+        },
       });
     }
     return this.prisma.conversation.create({
@@ -42,7 +45,7 @@ export class ConversationsService {
         where,
         skip,
         take: limit,
-        orderBy: { lastActivity: 'desc' },
+        orderBy: { lastActivity: "desc" },
         include: {
           contact: true,
           _count: { select: { messages: true } },
@@ -58,7 +61,7 @@ export class ConversationsService {
       include: {
         contact: true,
         messages: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { createdAt: "asc" },
           include: { statuses: true, media: true },
         },
       },

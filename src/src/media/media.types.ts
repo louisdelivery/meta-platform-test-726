@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BaseFilterDto } from 'src/@1hand/base.type';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { BaseFilterDto } from "../@1hand/base.type";
 
 export class MediaDto {
   @ApiProperty()
@@ -19,6 +19,6 @@ export class MediaDto {
 }
 
 export class FilterMediaDto extends BaseFilterDto {
-  @ApiPropertyOptional({ example: 'IMAGE' })
+  @ApiPropertyOptional({ example: "IMAGE" })
   kind?: string;
 }

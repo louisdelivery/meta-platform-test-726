@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BaseFilterDto } from 'src/@1hand/base.type';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { BaseFilterDto } from "../@1hand/base.type";
 
 export class WebhookEventDto {
   @ApiProperty()
@@ -19,7 +19,7 @@ export class WebhookEventDto {
 }
 
 export class FilterEventDto extends BaseFilterDto {
-  @ApiPropertyOptional({ example: 'MESSAGE_TEXT' })
+  @ApiPropertyOptional({ example: "MESSAGE_TEXT" })
   type?: string;
 
   @ApiPropertyOptional({ example: true })

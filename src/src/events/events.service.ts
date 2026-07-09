@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { parsePagination } from 'src/@1hand/utils';
-import { PrismaService } from 'src/prisma.service';
-import { FilterEventDto } from './events.types';
-import { toWebhookEventDto } from './events.mapper';
+import { Injectable } from "@nestjs/common";
+import { parsePagination } from "../@1hand/utils";
+import { PrismaService } from "../prisma.service";
+import { FilterEventDto } from "./events.types";
+import { toWebhookEventDto } from "./events.mapper";
 
 @Injectable()
 export class EventsService {
@@ -17,12 +17,20 @@ export class EventsService {
     const search = filter.search?.trim();
     const where = {
       type: filter.type as any,
-      processed: typeof filter.processed === 'boolean' ? filter.processed : undefined,
-      OR: search ? [{ id: { contains: search } }, { signature: { contains: search } }] : undefined,
+      processed:
+        typeof filter.processed === "boolean" ? filter.processed : undefined,
+      OR: search
+        ? [{ id: { contains: search } }, { signature: { contains: search } }]
+        : undefined,
     };
     const [total, entities] = await this.prisma.$transaction([
       this.prisma.webhookEvent.count({ where }),
-      this.prisma.webhookEvent.findMany({ where, skip, take: limit, orderBy: { receivedAt: 'desc' } }),
+      this.prisma.webhookEvent.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { receivedAt: "desc" },
+      }),
     ]);
     return { page, limit, total, data: entities.map(toWebhookEventDto) };
   }
@@ -31,7 +39,10 @@ export class EventsService {
     return this.prisma.webhookEvent.findUniqueOrThrow({ where: { id } });
   }
 
-  updateProcessing(id: string, data: { processed: boolean; processingTime?: number; error?: string }) {
+  updateProcessing(
+    id: string,
+    data: { processed: boolean; processingTime?: number; error?: string },
+  ) {
     return this.prisma.webhookEvent.update({ where: { id }, data });
   }
 }

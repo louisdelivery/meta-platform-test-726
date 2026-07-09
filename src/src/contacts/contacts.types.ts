@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BaseFilterDto } from 'src/@1hand/base.type';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { BaseFilterDto } from "../@1hand/base.type";
 
 export class ContactDto {
   @ApiProperty()

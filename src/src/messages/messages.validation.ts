@@ -1,5 +1,5 @@
-import * as Joi from 'joi';
-import { FilterSchema } from 'src/@1hand/base.validator';
+import * as Joi from "joi";
+import { FilterSchema } from "../@1hand/base.validator";
 
 export const SendTextMessageSchema = Joi.object({
   to: Joi.string().trim().required(),
@@ -7,6 +7,6 @@ export const SendTextMessageSchema = Joi.object({
 });
 
 export const FilterMessageSchema = FilterSchema.keys({
-  direction: Joi.string().valid('INBOUND', 'OUTBOUND').optional(),
+  direction: Joi.string().valid("INBOUND", "OUTBOUND").optional(),
   type: Joi.string().optional(),
 });

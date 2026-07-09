@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BaseFilterDto } from 'src/@1hand/base.type';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { BaseFilterDto } from "../@1hand/base.type";
 
 export class TemplateDto {
   @ApiProperty()
@@ -19,20 +19,24 @@ export class TemplateDto {
 }
 
 export class CreateTemplateDto {
-  @ApiProperty({ example: 'order_update' })
+  @ApiProperty({ example: "order_update" })
   name: string;
 
-  @ApiProperty({ example: 'fr' })
+  @ApiProperty({ example: "fr" })
   language: string;
 
-  @ApiProperty({ example: 'UTILITY' })
+  @ApiProperty({ example: "UTILITY" })
   category: string;
 
-  @ApiPropertyOptional({ example: [{ type: 'BODY', text: 'Bonjour {{1}}, votre commande est prete.' }] })
+  @ApiPropertyOptional({
+    example: [
+      { type: "BODY", text: "Bonjour {{1}}, votre commande est prete." },
+    ],
+  })
   components?: any[];
 }
 
 export class FilterTemplateDto extends BaseFilterDto {
-  @ApiPropertyOptional({ example: 'APPROVED' })
+  @ApiPropertyOptional({ example: "APPROVED" })
   status?: string;
 }

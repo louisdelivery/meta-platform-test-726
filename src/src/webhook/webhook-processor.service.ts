@@ -1,9 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { MediaKind, MessageDirection, MessageStatusValue, TemplateStatusValue, WebhookEventType } from '@prisma/client';
-import { ClassifiedWebhook } from '../common/types/webhook.types';
-import { ContactsService } from '../contacts/contacts.service';
-import { ConversationsService } from '../conversations/conversations.service';
-import { PrismaService } from 'src/prisma.service';
+import { Injectable, Logger } from "@nestjs/common";
+import {
+  MediaKind,
+  MessageDirection,
+  MessageStatusValue,
+  TemplateStatusValue,
+  WebhookEventType,
+} from "@prisma/client";
+import { ClassifiedWebhook } from "../common/types/webhook.types";
+import { ContactsService } from "../contacts/contacts.service";
+import { ConversationsService } from "../conversations/conversations.service";
+import { PrismaService } from "../prisma.service";
 
 @Injectable()
 export class WebhookProcessorService {
@@ -28,17 +34,30 @@ export class WebhookProcessorService {
       await this.processTemplateStatus(payload);
       return;
     }
-    this.logger.log(`Aucun traitement specialise pour ${classified.type} (${eventId})`);
+    this.logger.log(
+      `Aucun traitement specialise pour ${classified.type} (${eventId})`,
+    );
   }
 
-  private async processInboundMessage(payload: any, classified: ClassifiedWebhook) {
+  private async processInboundMessage(
+    payload: any,
+    classified: ClassifiedWebhook,
+  ) {
     const value = classified.firstChange?.value ?? {};
     const message = classified.firstMessage;
     const contactPayload = value.contacts?.[0];
     const from = message.from ?? contactPayload?.wa_id;
-    const contact = from ? await this.contacts.upsertFromWebhook(from, contactPayload?.profile?.name) : undefined;
+    const contact = from
+      ? await this.contacts.upsertFromWebhook(
+          from,
+          contactPayload?.profile?.name,
+        )
+      : undefined;
 
-    const conversation = await this.conversations.touchConversation(from ?? 'unknown', contact?.id);
+    const conversation = await this.conversations.touchConversation(
+      from ?? "unknown",
+      contact?.id,
+    );
     const text = this.extractText(message);
     const savedMessage = await this.prisma.message.upsert({
       where: { waMessageId: message.id },
@@ -51,7 +70,9 @@ export class WebhookProcessorService {
         type: classified.messageType,
         text,
         payload,
-        receivedAt: message.timestamp ? new Date(Number(message.timestamp) * 1000) : new Date(),
+        receivedAt: message.timestamp
+          ? new Date(Number(message.timestamp) * 1000)
+          : new Date(),
       },
     });
 
@@ -80,14 +101,18 @@ export class WebhookProcessorService {
   private async processStatus(status: any) {
     const normalized = this.mapStatus(status.status);
     const message = status.id
-      ? await this.prisma.message.findUnique({ where: { waMessageId: status.id } })
+      ? await this.prisma.message.findUnique({
+          where: { waMessageId: status.id },
+        })
       : undefined;
     await this.prisma.messageStatus.create({
       data: {
         messageId: message?.id,
         waMessageId: status.id,
         status: normalized,
-        timestamp: status.timestamp ? new Date(Number(status.timestamp) * 1000) : new Date(),
+        timestamp: status.timestamp
+          ? new Date(Number(status.timestamp) * 1000)
+          : new Date(),
         payload: status,
       },
     });
@@ -95,13 +120,21 @@ export class WebhookProcessorService {
 
   private async processTemplateStatus(payload: any) {
     const value = payload?.entry?.[0]?.changes?.[0]?.value ?? {};
-    const name = value.message_template_name ?? value.name ?? 'unknown_template';
+    const name =
+      value.message_template_name ?? value.name ?? "unknown_template";
     const status = this.mapTemplateStatus(value.event ?? value.status);
     const template = await this.prisma.template.upsert({
-      where: { name_language: { name, language: value.message_template_language ?? value.language ?? 'unknown' } },
+      where: {
+        name_language: {
+          name,
+          language:
+            value.message_template_language ?? value.language ?? "unknown",
+        },
+      },
       create: {
         name,
-        language: value.message_template_language ?? value.language ?? 'unknown',
+        language:
+          value.message_template_language ?? value.language ?? "unknown",
         metaId: value.message_template_id,
         status,
         payload: value,
@@ -133,7 +166,7 @@ export class WebhookProcessorService {
   }
 
   private extractMedia(message: any) {
-    for (const kind of ['image', 'video', 'audio', 'document', 'sticker']) {
+    for (const kind of ["image", "video", "audio", "document", "sticker"]) {
       if (message[kind]?.id) {
         return { ...message[kind], kind: kind.toUpperCase() };
       }
@@ -143,13 +176,13 @@ export class WebhookProcessorService {
 
   private mapStatus(status?: string): MessageStatusValue {
     switch (status) {
-      case 'sent':
+      case "sent":
         return MessageStatusValue.SENT;
-      case 'delivered':
+      case "delivered":
         return MessageStatusValue.DELIVERED;
-      case 'read':
+      case "read":
         return MessageStatusValue.READ;
-      case 'failed':
+      case "failed":
         return MessageStatusValue.FAILED;
       default:
         return MessageStatusValue.ACCEPTED;
@@ -157,8 +190,12 @@ export class WebhookProcessorService {
   }
 
   private mapTemplateStatus(status?: string): TemplateStatusValue {
-    const normalized = String(status ?? '').toUpperCase();
-    if (['PENDING', 'APPROVED', 'REJECTED', 'PAUSED', 'DISABLED'].includes(normalized)) {
+    const normalized = String(status ?? "").toUpperCase();
+    if (
+      ["PENDING", "APPROVED", "REJECTED", "PAUSED", "DISABLED"].includes(
+        normalized,
+      )
+    ) {
       return normalized as TemplateStatusValue;
     }
     return TemplateStatusValue.UNKNOWN;

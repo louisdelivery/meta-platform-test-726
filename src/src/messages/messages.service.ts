@@ -1,11 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { MessageDirection, MessageStatusValue, MessageType } from '@prisma/client';
-import { ConversationsService } from '../conversations/conversations.service';
-import { PrismaService } from 'src/prisma.service';
-import { MetaService } from '../meta/meta.service';
-import { parsePagination } from 'src/@1hand/utils';
-import { FilterMessageDto, SendTextMessageDto } from './messages.types';
-import { toMessageDto } from './messages.mapper';
+import { Injectable, Logger } from "@nestjs/common";
+import {
+  MessageDirection,
+  MessageStatusValue,
+  MessageType,
+} from "@prisma/client";
+import { ConversationsService } from "../conversations/conversations.service";
+import { PrismaService } from "../prisma.service";
+import { MetaService } from "../meta/meta.service";
+import { parsePagination } from "../@1hand/utils";
+import { FilterMessageDto, SendTextMessageDto } from "./messages.types";
+import { toMessageDto } from "./messages.mapper";
 
 @Injectable()
 export class MessagesService {
@@ -46,7 +50,7 @@ export class MessagesService {
       ok: true,
       localMessageId: message.id,
       waMessageId,
-      note: 'Graph API a accepte la requete. Les confirmations sent/delivered/read arriveront ensuite par webhook.',
+      note: "Graph API a accepte la requete. Les confirmations sent/delivered/read arriveront ensuite par webhook.",
       graphResponse,
     };
   }
@@ -57,7 +61,12 @@ export class MessagesService {
     const where = {
       direction: filter.direction as any,
       type: filter.type as any,
-      OR: search ? [{ text: { contains: search } }, { waMessageId: { contains: search } }] : undefined,
+      OR: search
+        ? [
+            { text: { contains: search } },
+            { waMessageId: { contains: search } },
+          ]
+        : undefined,
     };
     const [total, entities] = await this.prisma.$transaction([
       this.prisma.message.count({ where }),
@@ -65,7 +74,7 @@ export class MessagesService {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: { conversation: true, statuses: true, media: true },
       }),
     ]);

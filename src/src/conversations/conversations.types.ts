@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BaseFilterDto } from 'src/@1hand/base.type';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { BaseFilterDto } from "../@1hand/base.type";
 
 export class ConversationDto {
   @ApiProperty()
@@ -22,6 +22,6 @@ export class ConversationDto {
 }
 
 export class FilterConversationDto extends BaseFilterDto {
-  @ApiPropertyOptional({ example: 'OPEN' })
+  @ApiPropertyOptional({ example: "OPEN" })
   status?: string;
 }

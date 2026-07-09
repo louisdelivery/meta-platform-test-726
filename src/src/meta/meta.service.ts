@@ -1,10 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ApiLogDirection } from '@prisma/client';
-import axios, { AxiosRequestConfig } from 'axios';
-import { PrismaService } from 'src/prisma.service';
-import { CreateTemplateDto, MetaMessageDto } from './meta.types';
-import { toMetaGraphResponseDto } from './meta.mapper';
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { ApiLogDirection } from "@prisma/client";
+import axios, { AxiosRequestConfig } from "axios";
+import { PrismaService } from "../prisma.service";
+import { CreateTemplateDto, MetaMessageDto } from "./meta.types";
+import { toMetaGraphResponseDto } from "./meta.mapper";
 
 @Injectable()
 export class MetaService {
@@ -17,19 +17,25 @@ export class MetaService {
 
   async sendMessage(dto: MetaMessageDto) {
     const payload = {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
       to: dto.to,
       type: dto.type,
       [dto.type]: dto.content ?? {},
     };
-    return toMetaGraphResponseDto(await this.graphRequest('POST', `/${this.requiredPhoneNumberId()}/messages`, payload));
+    return toMetaGraphResponseDto(
+      await this.graphRequest(
+        "POST",
+        `/${this.requiredPhoneNumberId()}/messages`,
+        payload,
+      ),
+    );
   }
 
   async sendText(to: string, body: string) {
     return this.sendMessage({
       to,
-      type: 'text',
+      type: "text",
       content: { preview_url: false, body },
     });
   }
@@ -41,40 +47,72 @@ export class MetaService {
       category: dto.category,
       components: dto.components ?? [],
     };
-    return toMetaGraphResponseDto(await this.graphRequest('POST', `/${this.requiredWabaId()}/message_templates`, payload));
+    return toMetaGraphResponseDto(
+      await this.graphRequest(
+        "POST",
+        `/${this.requiredWabaId()}/message_templates`,
+        payload,
+      ),
+    );
   }
 
   async getTemplates() {
-    return toMetaGraphResponseDto(await this.graphRequest('GET', `/${this.requiredWabaId()}/message_templates`));
+    return toMetaGraphResponseDto(
+      await this.graphRequest(
+        "GET",
+        `/${this.requiredWabaId()}/message_templates`,
+      ),
+    );
   }
 
   async getMedia(id: string) {
-    return toMetaGraphResponseDto(await this.graphRequest('GET', `/${id}`));
+    return toMetaGraphResponseDto(await this.graphRequest("GET", `/${id}`));
   }
 
   async deleteMedia(id: string) {
-    return toMetaGraphResponseDto(await this.graphRequest('DELETE', `/${id}`));
+    return toMetaGraphResponseDto(await this.graphRequest("DELETE", `/${id}`));
   }
 
-  async downloadMedia(url: string): Promise<{ data: Buffer; contentType?: string }> {
+  async downloadMedia(
+    url: string,
+  ): Promise<{ data: Buffer; contentType?: string }> {
     const started = Date.now();
     try {
       const response = await axios.get<ArrayBuffer>(url, {
-        responseType: 'arraybuffer',
+        responseType: "arraybuffer",
         headers: this.authorizationHeaders(),
       });
-      await this.logApi('GET', url, undefined, response.status, { contentType: response.headers['content-type'] }, Date.now() - started);
+      await this.logApi(
+        "GET",
+        url,
+        undefined,
+        response.status,
+        { contentType: response.headers["content-type"] },
+        Date.now() - started,
+      );
       return {
         data: Buffer.from(response.data),
-        contentType: response.headers['content-type'],
+        contentType: response.headers["content-type"] as any,
       };
     } catch (error: any) {
-      await this.logApi('GET', url, undefined, error.response?.status, error.response?.data, Date.now() - started, error.message);
+      await this.logApi(
+        "GET",
+        url,
+        undefined,
+        error.response?.status,
+        error.response?.data,
+        Date.now() - started,
+        error.message,
+      );
       throw error;
     }
   }
 
-  private async graphRequest(method: AxiosRequestConfig['method'], path: string, data?: any) {
+  private async graphRequest(
+    method: AxiosRequestConfig["method"],
+    path: string,
+    data?: any,
+  ) {
     const url = `${this.baseUrl()}${path}`;
     const started = Date.now();
     this.logger.log(`Graph API ${method} ${path}`);
@@ -85,42 +123,57 @@ export class MetaService {
         data,
         headers: {
           ...this.authorizationHeaders(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      await this.logApi(method ?? 'GET', url, data, response.status, response.data, Date.now() - started);
+      await this.logApi(
+        method ?? "GET",
+        url,
+        data,
+        response.status,
+        response.data,
+        Date.now() - started,
+      );
       return response.data;
     } catch (error: any) {
       const responseBody = error.response?.data ?? { message: error.message };
-      await this.logApi(method ?? 'GET', url, data, error.response?.status, responseBody, Date.now() - started, error.message);
+      await this.logApi(
+        method ?? "GET",
+        url,
+        data,
+        error.response?.status,
+        responseBody,
+        Date.now() - started,
+        error.message,
+      );
       throw new BadRequestException(responseBody);
     }
   }
 
   private baseUrl() {
-    return `https://graph.facebook.com/${this.config.get<string>('meta.graphApiVersion')}`;
+    return `https://graph.facebook.com/${this.config.get<string>("meta.graphApiVersion")}`;
   }
 
   private authorizationHeaders() {
-    const token = this.config.get<string>('meta.accessToken');
+    const token = this.config.get<string>("meta.accessToken");
     if (!token) {
-      throw new BadRequestException('META_ACCESS_TOKEN manquant');
+      throw new BadRequestException("META_ACCESS_TOKEN manquant");
     }
     return { Authorization: `Bearer ${token}` };
   }
 
   private requiredPhoneNumberId() {
-    const id = this.config.get<string>('meta.phoneNumberId');
+    const id = this.config.get<string>("meta.phoneNumberId");
     if (!id) {
-      throw new BadRequestException('META_PHONE_NUMBER_ID manquant');
+      throw new BadRequestException("META_PHONE_NUMBER_ID manquant");
     }
     return id;
   }
 
   private requiredWabaId() {
-    const id = this.config.get<string>('meta.wabaId');
+    const id = this.config.get<string>("meta.wabaId");
     if (!id) {
-      throw new BadRequestException('META_WABA_ID manquant');
+      throw new BadRequestException("META_WABA_ID manquant");
     }
     return id;
   }

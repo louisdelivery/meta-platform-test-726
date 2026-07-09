@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { TemplateStatusValue } from '@prisma/client';
-import { parsePagination } from 'src/@1hand/utils';
-import { PrismaService } from 'src/prisma.service';
-import { MetaService } from '../meta/meta.service';
-import { CreateTemplateDto, FilterTemplateDto } from './templates.types';
-import { toTemplateDto } from './templates.mapper';
+import { Injectable } from "@nestjs/common";
+import { TemplateStatusValue } from "@prisma/client";
+import { parsePagination } from "../@1hand/utils";
+import { PrismaService } from "../prisma.service";
+import { MetaService } from "../meta/meta.service";
+import { CreateTemplateDto, FilterTemplateDto } from "./templates.types";
+import { toTemplateDto } from "./templates.mapper";
 
 @Injectable()
 export class TemplatesService {
@@ -44,7 +44,7 @@ export class TemplatesService {
     return {
       ok: true,
       template: toTemplateDto(template),
-      note: 'Le statut final APPROVED ou REJECTED sera observe par webhook.',
+      note: "Le statut final APPROVED ou REJECTED sera observe par webhook.",
     };
   }
 
@@ -53,7 +53,9 @@ export class TemplatesService {
     const search = filter.search?.trim();
     const where = {
       status: filter.status as any,
-      OR: search ? [{ name: { contains: search } }, { language: { contains: search } }] : undefined,
+      OR: search
+        ? [{ name: { contains: search } }, { language: { contains: search } }]
+        : undefined,
     };
     const [total, entities] = await this.prisma.$transaction([
       this.prisma.template.count({ where }),
@@ -61,8 +63,8 @@ export class TemplatesService {
         where,
         skip,
         take: limit,
-        orderBy: { updatedAt: 'desc' },
-        include: { statuses: { orderBy: { createdAt: 'desc' } } },
+        orderBy: { updatedAt: "desc" },
+        include: { statuses: { orderBy: { createdAt: "desc" } } },
       }),
     ]);
     return { page, limit, total, data: entities.map(toTemplateDto) };
