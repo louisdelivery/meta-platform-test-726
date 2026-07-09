@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  STICKER
+  LOCATION
+  BUTTON
+  INTERACTIVE
+  TEMPLATE
+  REACTION
+  SYSTEM
+  UNKNOWN
+}
+
+enum MessageStatusValue {
+  ACCEPTED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  DELETED
+}
+
+enum WebhookEventType {
+  MESSAGE_TEXT
+  MESSAGE_MEDIA
+  MESSAGE_REACTION
+  MESSAGE_BUTTON
+  MESSAGE_LOCATION
+  MESSAGE_UNKNOWN
+  STATUS_SENT
+  STATUS_DELIVERED
+  STATUS_READ
+  STATUS_FAILED
+  TEMPLATE_STATUS
+  ACCOUNT_UPDATE
+  UNKNOWN
+}
+
+enum TemplateStatusValue {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  PAUSED
+  DISABLED
+  UNKNOWN
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  STICKER
+  UNKNOWN
+}
+
+enum ApiLogDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model MetaAccount {
+  id          String        @id @default(cuid())
+  name        String
+  appId       String?
+  businessId  String?
+  wabaId      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  phoneNumbers PhoneNumber[]
+}
+
+model PhoneNumber {
+  id                String       @id @default(cuid())
+  phoneNumberId     String       @unique
+  displayPhoneNumber String?
+  verifiedName      String?
+  metaAccountId     String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  metaAccount       MetaAccount? @relation(fields: [metaAccountId], references: [id])
+  messages          Message[]
+}
+
+model Contact {
+  id           String         @id @default(cuid())
+  waId         String         @unique
+  displayName  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  conversations Conversation[]
+  messages     Message[]
+}
+
+model Conversation {
+  id           String              @id @default(cuid())
+  phoneNumber  String
+  contactId    String?
+  startedAt    DateTime            @default(now())
+  lastActivity DateTime            @default(now())
+  status       ConversationStatus  @default(OPEN)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  contact      Contact?            @relation(fields: [contactId], references: [id])
+  messages     Message[]
+
+  @@index([phoneNumber])
+}
+
+model Message {
+  id              String            @id @default(cuid())
+  waMessageId     String?           @unique
+  conversationId  String?
+  contactId       String?
+  phoneNumberId   String?
+  direction       MessageDirection
+  type            MessageType       @default(UNKNOWN)
+  text            String?           @db.Text
+  payload         Json?
+  sentAt          DateTime?
+  receivedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  conversation    Conversation?     @relation(fields: [conversationId], references: [id])
+  contact         Contact?          @relation(fields: [contactId], references: [id])
+  phoneNumber     PhoneNumber?      @relation(fields: [phoneNumberId], references: [id])
+  statuses        MessageStatus[]
+  media           Media[]
+
+  @@index([conversationId])
+  @@index([direction])
+}
+
+model MessageStatus {
+  id          String             @id @default(cuid())
+  messageId   String?
+  waMessageId String?
+  status      MessageStatusValue
+  timestamp   DateTime?
+  payload     Json?
+  createdAt   DateTime           @default(now())
+  message     Message?           @relation(fields: [messageId], references: [id])
+
+  @@index([waMessageId])
+}
+
+model Media {
+  id          String     @id @default(cuid())
+  mediaId     String     @unique
+  messageId   String?
+  kind        MediaKind  @default(UNKNOWN)
+  mimeType    String?
+  sha256      String?
+  filePath    String?
+  url         String?    @db.Text
+  payload     Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  message     Message?   @relation(fields: [messageId], references: [id])
+}
+
+model WebhookEvent {
+  id             String           @id @default(cuid())
+  receivedAt     DateTime         @default(now())
+  signature      String?
+  headers        Json?
+  payload        Json
+  type           WebhookEventType @default(UNKNOWN)
+  processed      Boolean          @default(false)
+  processingTime Int?
+  error          String?          @db.Text
+  createdAt      DateTime         @default(now())
+
+  @@index([type])
+  @@index([processed])
+}
+
+model Template {
+  id         String              @id @default(cuid())
+  metaId     String?             @unique
+  name       String
+  language   String
+  category   String?
+  components Json?
+  status     TemplateStatusValue @default(DRAFT)
+  payload    Json?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  statuses   TemplateStatus[]
+
+  @@unique([name, language])
+}
+
+model TemplateStatus {
+  id         String              @id @default(cuid())
+  templateId String?
+  status     TemplateStatusValue
+  reason     String?             @db.Text
+  payload    Json?
+  createdAt  DateTime            @default(now())
+  template   Template?           @relation(fields: [templateId], references: [id])
+}
+
+model ApiLog {
+  id             String          @id @default(cuid())
+  direction      ApiLogDirection
+  method         String
+  url            String
+  statusCode     Int?
+  requestBody    Json?
+  responseBody   Json?
+  durationMs     Int?
+  error          String?         @db.Text
+  createdAt      DateTime        @default(now())
+
+  @@index([direction])
+  @@index([createdAt])
+}

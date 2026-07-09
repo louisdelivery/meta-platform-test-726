@@ -7,7 +7,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.prisma\"",
-    "start": "nest start --host 0.0.0.0 --port 4444",
+    "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "prisma:generate": "prisma generate",
@@ -24,9 +24,13 @@
     "@nestjs/swagger": "^11.2.0",
     "@prisma/client": "^6.11.1",
     "axios": "^1.10.0",
+    "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "joi": "^17.13.3",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "slugify": "^1.6.6"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.7",
